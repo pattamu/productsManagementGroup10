@@ -2,7 +2,7 @@ const aws = require("aws-sdk")
 const bcrypt = require('bcrypt')
 
 const {userModel, passwordModel} = require("../models/userModel")
-const {isFileImage, validateURL, checkPinCode, isValid} = require('../validation/validator')
+const {isFileImage, validRegEx, checkPinCode, isValid} = require('../validation/validator')
 
 /***********************************AWS File Upload*************************************/
 aws.config.update({
@@ -35,11 +35,6 @@ let uploadFile= async (file) =>{
 }
     
 /*************************************************************************************/
-let nameRegEx = /^(?![\. ])[a-zA-Z\. ]+(?<! )$/ 
-let emailRegEx = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/ 
-let mobileRegEx = /^(\+\d{1,3}[- ]?)?\d{10}$/ 
-let pincodeRegEx = /^[1-9]{1}[0-9]{2}\s{0,1}[0-9]{3}$/
-/**********************************************************************************/
 
 
 //Create User API Handler
@@ -57,18 +52,18 @@ const createUser = async (req, res) => {
         
         if(!isValid(data.fname))
             error.push('First name is required')
-        if(isValid(data.fname) && !nameRegEx.test(data.fname?.trim()))
+        if(isValid(data.fname) && !validRegEx(data.fname, 'nameRegEx'))
             error.push('F-Name is Invalid')
 
         if(!isValid(data.lname))
             error.push('Last name is required')
-        if(isValid(data.lname) && !nameRegEx.test(data.lname?.trim()))
+        if(isValid(data.lname) && !validRegEx(data.lname, 'nameRegEx'))
             error.push('L-Name is Invalid')
 
         //E-mail validation check
         if(!isValid(data.email))
             error.push('E-Mail is required')
-        if(isValid(data.email) && !emailRegEx.test(data.email?.trim()))
+        if(isValid(data.email) && !validRegEx(data.email, 'emailRegEx'))
             error.push('E-Mail is Invalid')
         if(findEmail)
             error.push('E-Mail is already used')
@@ -88,7 +83,7 @@ const createUser = async (req, res) => {
             error.push('Phone Number is required')
         else
             data.phone = data.phone.toString().trim()//converting phone number to String in case it's in Number
-        if(isValid(data.phone) && !mobileRegEx.test(data.phone?.trim()))
+        if(isValid(data.phone) && !validRegEx(data.phone, 'mobileRegEx'))
             error.push('Phone Number is Invalid')
         if(findPhone)
             error.push('Phone Number is already used')

@@ -7,10 +7,6 @@ const reg = {
     mobileRegEx: /^(\+\d{1,3}[- ]?)?\d{10}$/ ,
     pincodeRegEx: /^[1-9]{1}[0-9]{2}\s{0,1}[0-9]{3}$/
 }
-// let nameRegEx = /^(?![\. ])[a-zA-Z\. ]+(?<! )$/ 
-// let emailRegEx = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/ 
-// let mobileRegEx = /^(\+\d{1,3}[- ]?)?\d{10}$/ 
-let pincodeRegEx = /^[1-9]{1}[0-9]{2}\s{0,1}[0-9]{3}$/
 /**********************************************************************************/
 
 
@@ -22,14 +18,14 @@ const isFileImage = (file) => {
 }
 
 //RegEx Validation
-const validateURL = (url, urlPattern) => {
-    return urlPattern.test(url.toString().trim());
+const validRegEx = (data, regName) => {
+    return reg[regName].test(data.toString().trim());
 }
 
 //pincode Validation 
 const checkPinCode = async (pin) => {
     if(isValid(pin)){
-        if(pincodeRegEx.test(pin)){
+        if(validRegEx(pin, 'pincodeRegEx')){
             if(!await pinCheck(pin))
                 return("pincode doesn't exist in India")
             else return 'OK'
@@ -46,4 +42,4 @@ const isValid = (value) => {
     return true;
 }
 
-module.exports = {isFileImage, validateURL, checkPinCode, isValid}
+module.exports = {isFileImage, validRegEx, checkPinCode, isValid}
