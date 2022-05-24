@@ -4,9 +4,11 @@ const {userModel} = require('../models/userModel')
 const secret = process.env.JWT_SECRET || "product management group-10."
 const exp = process.env.JWT_EXP || '50d'
 
+//Generate token function
 const generateToken = (userData) => {
     return jwt.sign({
         userId: userData._id.toString(),
+        phone: userData.phone.toString()
     }, secret, { expiresIn: exp })
 }
 
