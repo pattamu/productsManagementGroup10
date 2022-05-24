@@ -9,6 +9,22 @@ const reg = {
 }
 /**********************************************************************************/
 
+//Name Formator
+const formatName = (data) => {
+    if(typeof data === 'string')
+        return data.split(' ').map(x => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase()).join(' ') 
+    else{
+        for(let key in data){
+            if(typeof data[key] === 'object'){
+                for(let subKey in data[key]){
+                    data[key][subKey] = data[key][subKey].split(' ').map(x => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase()).join(' ')
+                }
+            }
+        }
+        console.log(data)
+        return data
+    }
+}
 
 //Image file Validation
 const isFileImage = (file) => {
@@ -42,4 +58,4 @@ const isValid = (value) => {
     return true;
 }
 
-module.exports = {isFileImage, validRegEx, checkPinCode, isValid}
+module.exports = {formatName, isFileImage, validRegEx, checkPinCode, isValid}

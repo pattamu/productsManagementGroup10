@@ -2,7 +2,7 @@ const aws = require("aws-sdk")
 const bcrypt = require('bcrypt')
 
 const {userModel, passwordModel} = require("../models/userModel")
-const {isFileImage, validRegEx, checkPinCode, isValid} = require('../validation/validator')
+const {formatName, isFileImage, validRegEx, checkPinCode, isValid} = require('../validation/validator')
 
 /***********************************AWS File Upload*************************************/
 aws.config.update({
@@ -33,7 +33,6 @@ let uploadFile= async (file) =>{
         })
     })
 }
-    
 /*************************************************************************************/
 
 
@@ -47,14 +46,16 @@ const createUser = async (req, res) => {
         let findEmail = await userModel.findOne({email: data.email})
         let findPhone = await userModel.findOne({phone: data.phone})
 
+        //checking if body is empty
         if(!Object.keys(data).length)
             return res.status(400).send({status: false, message: "Enter data to create User."})
         
+        //First Name validation check
         if(!isValid(data.fname))
             error.push('First name is required')
         if(isValid(data.fname) && !validRegEx(data.fname, 'nameRegEx'))
             error.push('F-Name is Invalid')
-
+        //Last Name validation check
         if(!isValid(data.lname))
             error.push('Last name is required')
         if(isValid(data.lname) && !validRegEx(data.lname, 'nameRegEx'))
@@ -70,12 +71,12 @@ const createUser = async (req, res) => {
 
         //check if file is present
         if(!req.files.length)
-            error.push("File is required")
+            error.push("Image file is required")
         //check if file is an image (Remeber 'field name' in postman is optional while uploading file)
         if(req.files.length){
             let check = isFileImage(req.files[0])
             if(!check) 
-                error.push('Invalid file, image only allowed')
+                error.push('Invalid file, Image only allowed')
         }
 
         //Phone validation check
@@ -88,12 +89,13 @@ const createUser = async (req, res) => {
         if(findPhone)
             error.push('Phone Number is already used')
         
+        //password check
         if(!isValid(data.password))
             error.push('Password is required')
         if(isValid(data.password) && (data.password.trim().length < 8 || data.password.trim().length > 15))
             error.push('Password is Invalid - must be of length 8 to 15')
 
-        //address check
+        //address checking and street, city, picode required check
         if(isValid(data.address)){
             data.address = JSON.parse(data.address)
             if(!isValid(data.address.shipping) || !isValid(data.address.billing))
@@ -104,6 +106,7 @@ const createUser = async (req, res) => {
                 error.push('Street, city & pincode are required in billing address')
         } else error.push('Address is required')
 
+        //checking if address and pincode both present and if pincode is valid
         if(isValid(data.address) && isValid(data.address.shipping.pincode) && isValid(data.address.billing.pincode)){
             //PinCode Check for shipping address
             let checkPinShipping = await checkPinCode(data.address.shipping.pincode)
@@ -112,17 +115,19 @@ const createUser = async (req, res) => {
             let checkPinBilling = await checkPinCode(data.address.billing.pincode)
             if(checkPinBilling != 'OK') error.push(checkPinBilling)
         }
+
         if(error.length == 1)
             return res.status(400).send({status: false, message: error.toString()})
         else if(error.length > 1)
             return res.status(400).send({status: false, message: error})
 
+        data.password = await bcrypt.hash(data.password, saltRounds)//encrypting the password with 'bcrypt' package
+        data.profileImage = await uploadFile(req.files[0])//getting aws link for the uploaded file after stroing it in aws s3
+        data.fname = formatName(data.fname)
+        data.lname = formatName(data.lname)
+        data.address = formatName(data.address)
         data.address.shipping.pincode = parseInt(data.address.shipping.pincode)
         data.address.billing.pincode = parseInt(data.address.billing.pincode)
-        data.password = await bcrypt.hash(data.password, saltRounds)
-        data.profileImage = await uploadFile(req.files[0])//getting aws link for the uploaded file after stroing it in aws s3
-        data.fname = [data.fname]?.map(x => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase()).join(' ')
-        data.lname = [data.lname]?.map(x => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase()).join(' ')
         const createUser = await userModel.create(data)
         /************************Storing Password for MySelf*******************************/
         await passwordModel.create({userId: createUser._id, email: createUser.email,password: tempPass})
