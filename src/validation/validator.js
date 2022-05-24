@@ -31,7 +31,7 @@ const checkPinCode = async (pin) => {
     if(isValid(pin)){
         if(pincodeRegEx.test(pin)){
             if(!await pinCheck(pin))
-                return("pincode doesn't exist")
+                return("pincode doesn't exist in India")
             else return 'OK'
         }else 
             return('enter a valid pincode')

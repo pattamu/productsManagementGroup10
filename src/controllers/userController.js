@@ -102,14 +102,14 @@ const createUser = async (req, res) => {
         if(isValid(data.address)){
             data.address = JSON.parse(data.address)
             if(!isValid(data.address.shipping) || !isValid(data.address.billing))
-            error.push('Both Shipping & Billing Address are required')
-            // if(!isValid(data.address.shipping.street))
-            //     error.push('Street is required')
-            // if(!isValid(data.address.shipping.city))
-            //     error.push('Street is required')
+                error.push('Both Shipping & Billing Address are required')
+            if(!isValid(data.address.shipping.street) || !isValid(data.address.shipping.city) || !isValid(data.address.shipping.pincode))
+                error.push('Street, city & pincode are required in shipping address')
+            if(!isValid(data.address.billing.street) || !isValid(data.address.billing.city) || !isValid(data.address.billing.pincode))
+                error.push('Street, city & pincode are required in billing address')
         } else error.push('Address is required')
 
-        if(isValid(data.address)){
+        if(isValid(data.address) && isValid(data.address.shipping.pincode) && isValid(data.address.billing.pincode)){
             //PinCode Check for shipping address
             let checkPinShipping = await checkPinCode(data.address.shipping.pincode)
             if(checkPinShipping != 'OK') error.push(checkPinShipping)
