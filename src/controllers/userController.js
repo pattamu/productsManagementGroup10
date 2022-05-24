@@ -163,7 +163,7 @@ const updateUser = async (req, res) => {
         let userId = req.params.userId
         let tempPass = req.body.password
         let data = JSON.parse(JSON.stringify(req.body))
-        let error = [], err = [], fullErr = []
+        let error = []
         
         let findEmail = await userModel.findOne({email: data.email})
         let findPhone = await userModel.findOne({phone: data.phone})
@@ -175,39 +175,14 @@ const updateUser = async (req, res) => {
         if(!findUser)
             return res.status(404).send({status: false, message: `'${userId}' is not present in our User collection.`})
 
+        /***************************************User AuthoriZation check**********************************/
         if(userId != req.headers['valid-user'])
             return res.status(401).send({status: false, message: "User not Authorised. Can't update data"})
-
+        /**************************************************************************************************/
+        
         //checking if body is empty
         if(!Object.keys(data).length)
             return res.status(400).send({status: false, message: "Can't Update User without any data."})
-
-        /*********************************************Valid key Check*************************************************************/
-        Object.keys(data).forEach(x => {if(!['fname', 'lname', 'email', 'profileImage', 'phone','password', 'address'].includes(x)) err.push(x)})
-        fullErr.push( err.length?err.join(', ') + ` in Body${err.length>1?' are Invalid fields.':' is an Invalid field.'}`:'' )
-
-        if(isValid(data.address)){
-            let err = []
-            data.address = JSON.parse(data.address)
-            Object.keys(data.address).forEach(x => {if(!['shipping', 'billing'].includes(x)) err.push(x)})
-            fullErr.push( err.length?err.join(', ') + ` in address${err.length>1?' are Invalid fields.':' is an Invalid field.'}`:'' )
-            err = []
-            if(isValid(data.address.shipping)){
-                Object.keys(data.address.shipping).forEach(x => {if(!['street', 'city', 'pincode'].includes(x)) err.push(x)})
-                fullErr.push( err.length?err.join(', ') + ` in Shipping adress${err.length>1?' are Invalid fields.':' is an Invalid field.'}`:'' )
-            }
-            err = []
-            if(isValid(data.address.billing)){
-                Object.keys(data.address.billing).forEach(x => {if(!['street', 'city', 'pincode'].includes(x)) err.push(x)})
-                fullErr.push( err.length?err.join(', ') + ` in Billing address${err.length>1?' are Invalid fields.':' is an Invalid field.'}`:'' )
-            }
-        }
-        fullErr = fullErr.filter(x => x.trim())
-        if(fullErr.length === 1)
-            return res.status(400).send({status:false, message:fullErr.toString()})
-        if(fullErr.length) 
-            return res.status(400).send({status:false, message:fullErr})
-        /**************************************************************************************************************************/
 
         //First Name validation check
         if(isValid(data.fname) && !validRegEx(data.fname, 'nameRegEx'))
