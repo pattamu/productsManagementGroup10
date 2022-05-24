@@ -1,0 +1,24 @@
+{
+  "name": "shoppingcart",
+  "version": "1.0.0",
+  "description": "This is about Shopping cart backend logics",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon src/index.js"
+  },
+  "author": "Pattamu Sandeep, Anil Agawani, Vivek kumar, Kaushik Nivalkar",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1140.0",
+    "axios": "^0.27.2",
+    "bcrypt": "^5.0.1",
+    "body-parser": "^1.20.0",
+    "express": "^4.18.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^6.3.4",
+    "multer": "^1.4.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.16"
+  }
+}
