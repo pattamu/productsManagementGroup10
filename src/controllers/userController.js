@@ -194,7 +194,7 @@ const updateUser = async (req, res) => {
         //E-Mail validation check
         if(isValid(data.email) && !validRegEx(data.email, 'emailRegEx'))
             error.push('E-Mail is Invalid')
-        if(findEmail)
+        if(findEmail && findEmail._id != userId)
             error.push('E-Mail is already used')
 
         //Phone validation check
