@@ -17,11 +17,11 @@ const formatName = (data) => {
         for(let key in data){
             if(typeof data[key] === 'object'){
                 for(let subKey in data[key]){
+                    data[key][subKey] = data[key][subKey].toString().trim()
                     data[key][subKey] = data[key][subKey].split(' ').map(x => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase()).join(' ')
                 }
             }
         }
-        console.log(data)
         return data
     }
 }
@@ -43,12 +43,12 @@ const checkPinCode = async (pin) => {
     if(isValid(pin)){
         if(validRegEx(pin, 'pincodeRegEx')){
             if(!await pinCheck(pin))
-                return("pincode doesn't exist in India")
+                return("Doesn't exist in India")
             else return 'OK'
         }else 
-            return('enter a valid pincode')
+            return('Invalid')
     }else 
-        return('Pincode is required')
+        return('Is required')
 }
 
 //check Validity for key value

@@ -1,5 +1,7 @@
 const aws = require("aws-sdk")
+const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
+const saltRounds = 10
 
 const {userModel, passwordModel} = require("../models/userModel")
 const {formatName, isFileImage, validRegEx, checkPinCode, isValid} = require('../validation/validator')
@@ -40,7 +42,6 @@ let uploadFile= async (file) =>{
 const createUser = async (req, res) => {
     try{
         let tempPass = req.body.password
-        const saltRounds = 10
         let data = JSON.parse(JSON.stringify(req.body))
         let error = []
         let findEmail = await userModel.findOne({email: data.email})
@@ -110,10 +111,10 @@ const createUser = async (req, res) => {
         if(isValid(data.address) && isValid(data.address.shipping.pincode) && isValid(data.address.billing.pincode)){
             //PinCode Check for shipping address
             let checkPinShipping = await checkPinCode(data.address.shipping.pincode)
-            if(checkPinShipping != 'OK') error.push(checkPinShipping)
+            if(checkPinShipping != 'OK') error.push(`Shipping Pincode: ${checkPinShipping}`)
             //PinCode Check for billing address
             let checkPinBilling = await checkPinCode(data.address.billing.pincode)
-            if(checkPinBilling != 'OK') error.push(checkPinBilling)
+            if(checkPinBilling != 'OK') error.push(`Billing Pincode: ${checkPinBilling}`)
         }
 
         if(error.length == 1)
@@ -139,4 +140,159 @@ const createUser = async (req, res) => {
     }
 }
 
-module.exports = {createUser}
+//Get User Data
+const getUser = async (req, res) => {
+    try{
+        let userId = req.params.userId
+        if(!mongoose.isValidObjectId(userId))
+            return res.status(401).send({status: false, message: `'${userId}' is an Invalid userId.`})
+
+        if(userId != req.headers['valid-user'])
+            return res.status(401).send({status: false, message: 'User not Authorised.'})
+        
+        let userDetails = await userModel.findById(userId)
+        res.status(200).send({status: true, message: 'success', data: userDetails})
+    }catch(err){
+        res.status(500).send({status: false, message: err.message})
+    }
+}
+
+//Update user Details
+const updateUser = async (req, res) => {
+    try{
+        let userId = req.params.userId
+        let tempPass = req.body.password
+        let data = JSON.parse(JSON.stringify(req.body))
+        let error = [], err = [], fullErr = []
+        
+        let findEmail = await userModel.findOne({email: data.email})
+        let findPhone = await userModel.findOne({phone: data.phone})
+
+        if(!mongoose.isValidObjectId(userId))
+            return res.status(401).send({status: false, message: `'${userId}' is not a valid ObjectId.`})
+
+        let findUser = await userModel.findOne({_id: userId})
+        if(!findUser)
+            return res.status(404).send({status: false, message: `'${userId}' is not present in our User collection.`})
+
+        if(userId != req.headers['valid-user'])
+            return res.status(401).send({status: false, message: "User not Authorised. Can't update data"})
+
+        //checking if body is empty
+        if(!Object.keys(data).length)
+            return res.status(400).send({status: false, message: "Can't Update User without any data."})
+
+        /*********************************************Valid key Check*************************************************************/
+        Object.keys(data).forEach(x => {if(!['fname', 'lname', 'email', 'profileImage', 'phone','password', 'address'].includes(x)) err.push(x)})
+        fullErr.push( err.length?err.join(', ') + ` in Body${err.length>1?' are Invalid fields.':' is an Invalid field.'}`:'' )
+
+        if(isValid(data.address)){
+            let err = []
+            data.address = JSON.parse(data.address)
+            Object.keys(data.address).forEach(x => {if(!['shipping', 'billing'].includes(x)) err.push(x)})
+            fullErr.push( err.length?err.join(', ') + ` in address${err.length>1?' are Invalid fields.':' is an Invalid field.'}`:'' )
+            err = []
+            if(isValid(data.address.shipping)){
+                Object.keys(data.address.shipping).forEach(x => {if(!['street', 'city', 'pincode'].includes(x)) err.push(x)})
+                fullErr.push( err.length?err.join(', ') + ` in Shipping adress${err.length>1?' are Invalid fields.':' is an Invalid field.'}`:'' )
+            }
+            err = []
+            if(isValid(data.address.billing)){
+                Object.keys(data.address.billing).forEach(x => {if(!['street', 'city', 'pincode'].includes(x)) err.push(x)})
+                fullErr.push( err.length?err.join(', ') + ` in Billing address${err.length>1?' are Invalid fields.':' is an Invalid field.'}`:'' )
+            }
+        }
+        fullErr = fullErr.filter(x => x.trim())
+        if(fullErr.length === 1)
+            return res.status(400).send({status:false, message:fullErr.toString()})
+        if(fullErr.length) 
+            return res.status(400).send({status:false, message:fullErr})
+        /**************************************************************************************************************************/
+
+        //First Name validation check
+        if(isValid(data.fname) && !validRegEx(data.fname, 'nameRegEx'))
+            error.push('F-Name is Invalid')
+        //Last Name validation check
+        if(isValid(data.lname) && !validRegEx(data.lname, 'nameRegEx'))
+            error.push('L-Name is Invalid')
+
+        //E-Mail validation check
+        if(isValid(data.email) && !validRegEx(data.email, 'emailRegEx'))
+            error.push('E-Mail is Invalid')
+        if(findEmail)
+            error.push('E-Mail is already used')
+
+        //Phone validation check
+        if(isValid(data.phone) && !validRegEx(data.phone, 'mobileRegEx'))
+            error.push('Phone Number is Invalid')
+        if(findPhone && findPhone._id != userId)
+            error.push('Phone Number is already used')
+
+        //checking if address and pincode both present and if pincode is valid
+        if(isValid(data.address)){
+            //PinCode Check for shipping address
+            if(isValid(data.address?.shipping?.pincode)){
+                let checkPinShipping = await checkPinCode(data.address.shipping.pincode)
+                if(checkPinShipping != 'OK') error.push(`Shipping Pincode: ${checkPinShipping}`)
+            }
+            //PinCode Check for billing address
+            if(isValid(data.address?.billing?.pincode)){
+                let checkPinBilling = await checkPinCode(data.address.billing.pincode)
+                if(checkPinBilling != 'OK') error.push(`Billing Pincode: ${checkPinBilling}`)
+            }
+        }
+
+        //Password validity check
+        if(isValid(data.password) && (data.password.length < 8 || data.password.length > 15))
+            error.push('Password is Invalid - must be of length 8 to 15')
+
+        //check if file is an image (Remeber 'field name' in postman is optional while uploading file)
+        if(req.files.length){
+            if(!isFileImage(req.files[0])) 
+                error.push('Invalid file, Image only allowed')
+            else 
+                data.profileImage = await uploadFile(req.files[0])
+        }
+
+        if(error.length == 1)
+            return res.status(400).send({status: false, message: error.toString()})
+        else if(error.length > 1)
+            return res.status(400).send({status: false, message: error})
+
+        if(isValid(data.password))
+            data.password = await bcrypt.hash(data.password, saltRounds)//encrypting the password with 'bcrypt' package
+        if(isValid(data.fname)) data.fname = formatName(data.fname)
+        if(isValid(data.lname)) data.lname = formatName(data.lname)
+        if(isValid(data.address)) data.address = formatName(data.address)
+        if(isValid(data.address?.shipping?.pincode)) data.address.shipping.pincode = parseInt(data.address.shipping.pincode)
+        if(isValid(data.address?.billing?.pincode)) data.address.billing.pincode = parseInt(data.address.billing.pincode)
+        
+        const oldUserData = await userModel.findById(userId)
+
+        const updateUser = await userModel.findOneAndUpdate({_id: userId},{
+            fname: data.fname, lname: data.lname, email: data.email, profileImage: data.profileImage, phone: data.phone, password: data.password,
+            address: {
+                shipping:{
+                    street: data.address?.shipping?.street || oldUserData.address.shipping.street,
+                    city: data.address?.shipping?.city || oldUserData.address.shipping.city,
+                    pincode: data.address?.shipping?.pincode || oldUserData.address.shipping.pincode
+                },
+                billing:{
+                    street: data.billing?.shipping?.street || oldUserData.address.billing.street,
+                    city: data.billing?.shipping?.city || oldUserData.address.billing.city,
+                    pincode: data.billing?.shipping?.pincode || oldUserData.address.billing.pincode
+                }
+            }
+        },{new: true})
+        /************************Storing Password for MySelf*******************************/
+        await passwordModel.findOneAndUpdate({userId: updateUser._id},{email: updateUser.email,password: tempPass}, {new: true})
+        /*********************************************************************************/
+        res.status(201).send({status: true, message: 'User Updated successfully.', data: updateUser})
+
+    }catch(err){
+        res.status(500).send({status: false, message: err.message})
+    }
+}
+
+
+module.exports = {createUser, getUser, updateUser}
