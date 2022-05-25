@@ -3,39 +3,9 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const saltRounds = 10
 
+const uploadFile = require('./awsConnect')
 const {userModel, passwordModel} = require("../models/userModel")
 const {formatName, isFileImage, validRegEx, checkPinCode, isValid} = require('../validation/validator')
-
-/***********************************AWS File Upload*************************************/
-aws.config.update({
-    accessKeyId: "AKIAY3L35MCRVFM24Q7U",
-    secretAccessKey: "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",
-    region: "ap-south-1"
-})
-
-let uploadFile= async (file) =>{
-    return new Promise( (resolve, reject) => {
-    // this function will upload file to aws and return the link
-    let s3= new aws.S3({apiVersion: '2006-03-01'}); // we will be using the s3 service of aws
-
-    var uploadParams= {
-        ACL: "public-read",
-        Bucket: "classroom-training-bucket",
-        Key: "Group10/" + file.originalname, 
-        Body: file.buffer
-    }
-
-    s3.upload( uploadParams, (err, data ) => {
-        if(err) {
-            return reject({"error": err})
-        }
-        // console.log(data)
-        console.log("file uploaded succesfully")
-        return resolve(data.Location)
-        })
-    })
-}
-/*************************************************************************************/
 
 
 //Create User API Handler
@@ -127,8 +97,8 @@ const createUser = async (req, res) => {
         data.fname = formatName(data.fname)
         data.lname = formatName(data.lname)
         data.address = formatName(data.address)
-        data.address.shipping.pincode = parseInt(data.address.shipping.pincode)
-        data.address.billing.pincode = parseInt(data.address.billing.pincode)
+        // data.address.shipping.pincode = parseInt(data.address.shipping.pincode)
+        // data.address.billing.pincode = parseInt(data.address.billing.pincode)
         const createUser = await userModel.create(data)
         /************************Storing Password for MySelf*******************************/
         await passwordModel.create({userId: createUser._id, email: createUser.email,password: tempPass})
@@ -239,8 +209,8 @@ const updateUser = async (req, res) => {
         if(isValid(data.fname)) data.fname = formatName(data.fname)
         if(isValid(data.lname)) data.lname = formatName(data.lname)
         if(isValid(data.address)) data.address = formatName(data.address)
-        if(isValid(data.address?.shipping?.pincode)) data.address.shipping.pincode = parseInt(data.address.shipping.pincode)
-        if(isValid(data.address?.billing?.pincode)) data.address.billing.pincode = parseInt(data.address.billing.pincode)
+        // if(isValid(data.address?.shipping?.pincode)) data.address.shipping.pincode = parseInt(data.address.shipping.pincode)
+        // if(isValid(data.address?.billing?.pincode)) data.address.billing.pincode = parseInt(data.address.billing.pincode)
         
         const oldUserData = await userModel.findById(userId)
 
