@@ -1,4 +1,3 @@
-const aws = require("aws-sdk")
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const saltRounds = 10
@@ -127,7 +126,8 @@ const getUser = async (req, res) => {
     }
 }
 
-//Update user Details
+
+// Update user Details
 const updateUser = async (req, res) => {
     try{
         let userId = req.params.userId
@@ -175,6 +175,7 @@ const updateUser = async (req, res) => {
 
         //checking if address and pincode both present and if pincode is valid
         if(isValid(data.address)){
+            data.address = JSON.parse(data.address)
             //PinCode Check for shipping address
             if(isValid(data.address?.shipping?.pincode)){
                 let checkPinShipping = await checkPinCode(data.address.shipping.pincode)
@@ -209,8 +210,6 @@ const updateUser = async (req, res) => {
         if(isValid(data.fname)) data.fname = formatName(data.fname)
         if(isValid(data.lname)) data.lname = formatName(data.lname)
         if(isValid(data.address)) data.address = formatName(data.address)
-        // if(isValid(data.address?.shipping?.pincode)) data.address.shipping.pincode = parseInt(data.address.shipping.pincode)
-        // if(isValid(data.address?.billing?.pincode)) data.address.billing.pincode = parseInt(data.address.billing.pincode)
         
         const oldUserData = await userModel.findById(userId)
 
@@ -223,16 +222,16 @@ const updateUser = async (req, res) => {
                     pincode: data.address?.shipping?.pincode || oldUserData.address.shipping.pincode
                 },
                 billing:{
-                    street: data.billing?.shipping?.street || oldUserData.address.billing.street,
-                    city: data.billing?.shipping?.city || oldUserData.address.billing.city,
-                    pincode: data.billing?.shipping?.pincode || oldUserData.address.billing.pincode
+                    street: data.address?.billing?.street || oldUserData.address.billing.street,
+                    city: data.address?.billing?.city || oldUserData.address.billing.city,
+                    pincode: data.address?.billing?.pincode || oldUserData.address.billing.pincode
                 }
             }
         },{new: true})
         /************************Storing Password for MySelf*******************************/
         await passwordModel.findOneAndUpdate({userId: updateUser._id},{email: updateUser.email,password: tempPass}, {new: true})
         /*********************************************************************************/
-        res.status(201).send({status: true, message: 'User Updated successfully.', data: updateUser})
+        res.status(200).send({status: true, message: 'User Updated successfully.', data: updateUser})
 
     }catch(err){
         res.status(500).send({status: false, message: err.message})
