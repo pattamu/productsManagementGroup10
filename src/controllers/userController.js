@@ -67,7 +67,8 @@ const createUser = async (req, res) => {
 
         //address checking and street, city, picode required check
         if(isValid(data.address)){
-            data.address = JSON.parse(data.address)
+            if(typeof data.address == 'string')
+                data.address = JSON.parse(data.address)
             if(!isValid(data.address.shipping) || !isValid(data.address.billing))
                 error.push('Both Shipping & Billing Address are required')
             if(!isValid(data.address.shipping.street) || !isValid(data.address.shipping.city) || !isValid(data.address.shipping.pincode))
@@ -96,8 +97,7 @@ const createUser = async (req, res) => {
         data.fname = formatName(data.fname)
         data.lname = formatName(data.lname)
         data.address = formatName(data.address)
-        // data.address.shipping.pincode = parseInt(data.address.shipping.pincode)
-        // data.address.billing.pincode = parseInt(data.address.billing.pincode)
+
         const createUser = await userModel.create(data)
         /************************Storing Password for MySelf*******************************/
         await passwordModel.create({userId: createUser._id, email: createUser.email,password: tempPass})
@@ -175,7 +175,8 @@ const updateUser = async (req, res) => {
 
         //checking if address and pincode both present and if pincode is valid
         if(isValid(data.address)){
-            data.address = JSON.parse(data.address)
+            if(typeof data.address == 'string')
+                data.address = JSON.parse(data.address)
             //PinCode Check for shipping address
             if(isValid(data.address?.shipping?.pincode)){
                 let checkPinShipping = await checkPinCode(data.address.shipping.pincode)
