@@ -68,7 +68,7 @@ const createProduct = async (req, res) => {
 
 const getProducts = async(req, res) => {
     try{
-        let filters = req.query
+        let products, filters = req.query
         let options, newFilter = {title: filters.name}
 
         if(isValid(filters.size))
@@ -85,13 +85,16 @@ const getProducts = async(req, res) => {
             return res.status(400).send({ status: false, message: "You Can Only Use 1 For Ascending And -1 For Descending Sorting" })
         
         if(!Object.keys(newFilter).length && !options?.length){
-            let products = await productModel.find({isDeleted: false},{__v: 0}).sort({price: filters.priceSort})
+            products = await productModel.find({isDeleted: false},{__v: 0}).sort({price: filters.priceSort})
             if(!products.length)
                 return res.status(404).send({ status: false, message: "Product not found." })
             res.status(200).send({status: true, message: "Product data fetched.", data: products})
         }
         else{
-            let products = await productModel.find({$and: [newFilter, {$or:options}, {isDeleted: false}]},{__v: 0}).sort({price: filters.priceSort})
+            if(!options)
+                products = await productModel.find({$and: [newFilter, {isDeleted: false}]},{__v: 0}).sort({price: filters.priceSort})
+            else 
+                products = await productModel.find({$and: [newFilter, {$or:options}, {isDeleted: false}]},{__v: 0}).sort({price: filters.priceSort})
             if(!products.length)
                 return res.status(404).send({ status: false, message: "Product not found." })
             res.status(200).send({status: true, message: "Product data fetched.", data: products})
