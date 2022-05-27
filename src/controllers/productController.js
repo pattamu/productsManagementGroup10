@@ -68,37 +68,35 @@ const createProduct = async (req, res) => {
 
 const getProducts = async(req, res) => {
     try{
-        let products, filters = req.query
-        let options, newFilter = {title: filters.name}
+        let filters = req.query, products, options, options2, newFilter = {} //'options' is for size & 'options2' is for name
 
-        if(isValid(filters.size))
-            options = filters.size.split(/[, '"+-;]+/).map(x => {return x.trim() && {availableSizes:x}})
-        
+        if(isValid(filters.size) || isValid(filters.name)){
+            options = filters.size?.split(/[, '"+-;]+/).filter(x=>x.trim()).map(x => {return x.trim() && {availableSizes:x}})
+            options2 = filters.name?.split(/[, '"+-;]+/).filter(x=>x.trim()).map(x => {return x.trim() && {title:{$regex: new RegExp(x, 'gi')}}})
+        }
+
         if(isValid(filters.priceGreaterThan)) newFilter.price = {$gt: filters.priceGreaterThan}
         if(isValid(filters.priceLessThan)) newFilter.price = {$lt: filters.priceLessThan}
         if(isValid(filters.priceLessThan) && isValid(filters.priceGreaterThan)) 
             newFilter.price = { $gt: filters.priceGreaterThan, $lt: filters.priceLessThan }
 
         Object.keys(newFilter).forEach(key => !isValid(newFilter[key]) && delete newFilter[key])
-
+        
         if (isValid(filters.priceSort) && !(filters.priceSort == -1 || filters.priceSort == 1))
             return res.status(400).send({ status: false, message: "You Can Only Use 1 For Ascending And -1 For Descending Sorting" })
+
+        if(!options && !options2)
+            products = await productModel.find({$and: [newFilter, {isDeleted: false}]},{__v: 0}).collation({ locale: "en", strength: 2 }).sort({price: filters.priceSort})
+        else if(options && !options2)
+            products = await productModel.find({$and: [newFilter, {$or:options}, {isDeleted: false}]},{__v: 0}).collation({ locale: "en", strength: 2 }).sort({price: filters.priceSort})
+        else if(!options && options2)
+            products = await productModel.find({$and: [newFilter, {$or:options2}, {isDeleted: false}]},{__v: 0}).collation({ locale: "en", strength: 2 }).sort({price: filters.priceSort})
+        else
+            products = await productModel.find({$and: [newFilter,{$or:options},{$or:options2}, {isDeleted: false}]},{__v: 0}).collation({ locale: "en", strength: 2 }).sort({price: filters.priceSort})
         
-        if(!Object.keys(newFilter).length && !options?.length){
-            products = await productModel.find({isDeleted: false},{__v: 0}).sort({price: filters.priceSort})
-            if(!products.length)
-                return res.status(404).send({ status: false, message: "Product not found." })
-            res.status(200).send({status: true, message: "Product data fetched.", data: products})
-        }
-        else{
-            if(!options)
-                products = await productModel.find({$and: [newFilter, {isDeleted: false}]},{__v: 0}).sort({price: filters.priceSort})
-            else 
-                products = await productModel.find({$and: [newFilter, {$or:options}, {isDeleted: false}]},{__v: 0}).sort({price: filters.priceSort})
-            if(!products.length)
-                return res.status(404).send({ status: false, message: "Product not found." })
-            res.status(200).send({status: true, message: "Product data fetched.", data: products})
-        }
+        if(!products.length)
+            return res.status(404).send({ status: false, message: "Product not found." })
+        res.status(200).send({status: true, message: "Product data fetched.", data: products})
 
     }catch(err){
         res.status(500).send({status: false, message: err.message})
