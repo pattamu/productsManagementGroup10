@@ -58,4 +58,14 @@ const isValid = (value) => {
     return true;
 }
 
-module.exports = {formatName, isFileImage, validRegEx, checkPinCode, isValid}
+//check if a string is JSON or not (Not used in this project)
+const isJSON = (str) => {
+    try {
+        if(!isNaN(str)) return false //in case 'str' is a number then it'll return 'false'
+        return (JSON.parse(str) && !!str);
+    } catch (e) {
+        return false;
+    }
+}
+
+module.exports = {formatName, isFileImage, validRegEx, checkPinCode, isValid, isJSON}

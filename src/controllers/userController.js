@@ -4,7 +4,7 @@ const saltRounds = 10
 
 const uploadFile = require('./awsConnect')
 const {userModel, passwordModel} = require("../models/userModel")
-const {formatName, isFileImage, validRegEx, checkPinCode, isValid} = require('../validation/validator')
+const {formatName, isFileImage, validRegEx, checkPinCode, isValid, isJSON} = require('../validation/validator')
 
 
 //Create User API Handler
@@ -13,6 +13,10 @@ const createUser = async (req, res) => {
         let tempPass = req.body.password
         let data = JSON.parse(JSON.stringify(req.body))
         let error = []
+
+        if(!isJSON(data.address))
+            return res.status(400).send({status: false, message: "Please send a valid JSON data for address."})
+
         let findEmail = await userModel.findOne({email: data.email})
         let findPhone = await userModel.findOne({phone: data.phone})
 
@@ -135,6 +139,9 @@ const updateUser = async (req, res) => {
         let data = JSON.parse(JSON.stringify(req.body))
         let error = []
         
+        if(!isJSON(data))
+            return res.status(400).send({status: false, message: "Please send a valid JSON data for address."})
+
         let findEmail = await userModel.findOne({email: data.email})
         let findPhone = await userModel.findOne({phone: data.phone})
 
