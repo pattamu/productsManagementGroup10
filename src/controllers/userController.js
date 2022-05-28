@@ -14,7 +14,7 @@ const createUser = async (req, res) => {
         let data = JSON.parse(JSON.stringify(req.body))
         let error = []
 
-        if(!isJSON(data.address))
+        if(typeof data.address == 'string' && !isJSON(data.address))
             return res.status(400).send({status: false, message: "Please send a valid JSON data for address."})
 
         let findEmail = await userModel.findOne({email: data.email})
@@ -139,7 +139,7 @@ const updateUser = async (req, res) => {
         let data = JSON.parse(JSON.stringify(req.body))
         let error = []
         
-        if(!isJSON(data))
+        if(typeof data.address == 'string' && !isJSON(data))
             return res.status(400).send({status: false, message: "Please send a valid JSON data for address."})
 
         let findEmail = await userModel.findOne({email: data.email})

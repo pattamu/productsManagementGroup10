@@ -72,7 +72,7 @@ const getProducts = async(req, res) => {
 
         if(isValid(filters.size) || isValid(filters.name)){
             options = filters.size?.split(/[, '"+-;]+/).filter(x=>x.trim()).map(x => {return x.trim() && {availableSizes:x}})
-            options2 = filters.name?.split(/[, '"+-;]+/).filter(x=>x.trim()).map(x => {return x.trim() && {title:{$regex: new RegExp(x, 'gi')}}})
+            options2 = filters.name?.split(/[, '"+;]+/).filter(x=>x.trim()).map(x => {return x.trim() && {title:{$regex: new RegExp(x, 'gi')}}})
             if(!options?.length) options = [{}]
             if(!options2?.length) options2 = [{}]
         }
@@ -90,7 +90,7 @@ const getProducts = async(req, res) => {
         products = await productModel.find({$and: [newFilter,{$or:options||[{}]},{$or:options2||[{}]}, {isDeleted: false}]},{__v: 0}).collation({ locale: "en", strength: 2 }).sort({price: filters.priceSort})
 
         if(!products.length)
-            return res.status(404).send({ status: false, message: "Product not found." })
+            return res.status(404).send({ status: false, message: "No products found." })
         res.status(200).send({status: true, message: "Product data fetched.", data: products})
 
     }catch(err){
