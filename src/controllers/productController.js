@@ -89,8 +89,6 @@ const getProducts = async(req, res) => {
         if(isValid(filters.priceLessThan)) newFilter.price = {$lt: filters.priceLessThan}
         if(isValid(filters.priceLessThan) && isValid(filters.priceGreaterThan)) 
             newFilter.price = { $gt: filters.priceGreaterThan, $lt: filters.priceLessThan }
-
-        // Object.keys(newFilter).forEach(key => !isValid(newFilter[key]) && delete newFilter[key])
         
         if (isValid(filters.priceSort) && !(filters.priceSort == -1 || filters.priceSort == 1))
             return res.status(400).send({ status: false, message: "You Can Only Use 1 For Ascending And -1 For Descending Sorting" })
