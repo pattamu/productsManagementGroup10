@@ -12,6 +12,11 @@ const createProduct = async (req, res) => {
         if(!Object.keys(data).length)
             return res.status(400).send({status: false, message: "Enter data to create User."})
 
+        let findTitle = await productModel.findOne({title: data.title, isDeleted: false})
+
+        //Title uniqueness check
+        if(findTitle)
+            error.push('Title must be unique')
         //check for title
         if(!isValid(data.title)) error.push('Title is required')
         //check for description
@@ -50,6 +55,9 @@ const createProduct = async (req, res) => {
                 error.push('Size can only be from: S, XS, M, X, L, XXL, XL')
         }
 
+        if(isValid(data.installments) && !Number.isInteger(Number(data.installments)))
+            error.push('Installment can only be a Integer.')    
+
         if(error.length == 1)
             return res.status(400).send({status: false, message: error.toString()})
         else if(error.length > 1)
@@ -82,7 +90,7 @@ const getProducts = async(req, res) => {
         if(isValid(filters.priceLessThan) && isValid(filters.priceGreaterThan)) 
             newFilter.price = { $gt: filters.priceGreaterThan, $lt: filters.priceLessThan }
 
-        Object.keys(newFilter).forEach(key => !isValid(newFilter[key]) && delete newFilter[key])
+        // Object.keys(newFilter).forEach(key => !isValid(newFilter[key]) && delete newFilter[key])
         
         if (isValid(filters.priceSort) && !(filters.priceSort == -1 || filters.priceSort == 1))
             return res.status(400).send({ status: false, message: "You Can Only Use 1 For Ascending And -1 For Descending Sorting" })
