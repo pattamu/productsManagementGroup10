@@ -28,7 +28,7 @@ const formatName = (data) => {
 
 //Image file Validation
 const isFileImage = (file) => {
-    let ext = ['png', 'jpg', 'jpeg']
+    let ext = ['png', 'jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'webp']
     let fileExt = file.originalname.split('.')
     return ext.includes(fileExt[fileExt.length-1])
 }
