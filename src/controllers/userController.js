@@ -4,7 +4,7 @@ const saltRounds = 10
 
 const uploadFile = require('./awsConnect')
 const {userModel, passwordModel} = require("../models/userModel")
-const {formatName, isFileImage, validRegEx, checkPinCode, isValid, isJSON} = require('../validation/validator')
+const {printError, formatName, isFileImage, validRegEx, checkPinCode, isValid, isJSON} = require('../validation/validator')
 
 
 //Create User API Handler
@@ -91,10 +91,7 @@ const createUser = async (req, res) => {
             if(checkPinBilling != 'OK') error.push(`Billing Pincode: ${checkPinBilling}`)
         }
 
-        if(error.length == 1)
-            return res.status(400).send({status: false, message: error.toString()})
-        else if(error.length > 1)
-            return res.status(400).send({status: false, message: error})
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
 
         data.password = await bcrypt.hash(data.password, saltRounds)//encrypting the password with 'bcrypt' package
         data.profileImage = await uploadFile(req.files[0])//getting aws link for the uploaded file after stroing it in aws s3
@@ -139,7 +136,7 @@ const updateUser = async (req, res) => {
         let data = JSON.parse(JSON.stringify(req.body))
         let error = []
         
-        if(typeof data.address == 'string' && !isJSON(data))
+        if(typeof data.address == 'string' && !isJSON(data.address))
             return res.status(400).send({status: false, message: "Please send a valid JSON data for address."})
 
         let findEmail = await userModel.findOne({email: data.email})
@@ -208,10 +205,7 @@ const updateUser = async (req, res) => {
                 data.profileImage = await uploadFile(req.files[0])
         }
 
-        if(error.length == 1)
-            return res.status(400).send({status: false, message: error.toString()})
-        else if(error.length > 1)
-            return res.status(400).send({status: false, message: error})
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
 
         if(isValid(data.password))
             data.password = await bcrypt.hash(data.password, saltRounds)//encrypting the password with 'bcrypt' package

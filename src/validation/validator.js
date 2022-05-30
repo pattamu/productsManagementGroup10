@@ -9,6 +9,12 @@ const reg = {
 }
 /**********************************************************************************/
 
+//Print Error function
+const printError = error => {
+    if(error.length == 1) return error.toString()
+    else if(error.length > 1) return error
+}
+
 //Name Formator
 const formatName = (data) => {
     if(typeof data === 'string')
@@ -68,4 +74,4 @@ const isJSON = (str) => {
     }
 }
 
-module.exports = {formatName, isFileImage, validRegEx, checkPinCode, isValid, isJSON}
+module.exports = {printError, formatName, isFileImage, validRegEx, checkPinCode, isValid, isJSON}

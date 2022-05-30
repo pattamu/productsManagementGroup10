@@ -2,12 +2,8 @@ const mongoose = require('mongoose')
 const cartModel = require('../models/cartModel')
 const productModel = require('../models/productModel')
 const {userModel} = require("../models/userModel")
-const {isValid, isJSON} = require('../validation/validator')
+const {printError, isValid, isJSON} = require('../validation/validator')
 
-function printError(error){
-    if(error.length == 1) return error.toString()
-    else if(error.length > 1) return error
-}
 
 //createcart can take input in raw JSON as well as in form data
 const createCart = async (req, res) => {
