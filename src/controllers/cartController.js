@@ -59,15 +59,15 @@ const createCart = async (req, res) => {
         if(data.items.some(x => isValid(x.productId) && !mongoose.isValidObjectId(x.productId))) error.push("ProductId(s) is/are Invalid.")
         data.items.forEach(x => {if(!isValid(x.quantity)) x.quantity = 1}) //if 'quantity' key is not present take 'quantity' as 1 by default
         
+        if(data.items.some(x => x.quantity && (x.quantity < 0 || !Number.isInteger(x.quantity)))) error.push("Quantity of item(s) should be a an integer & > 0")
+        
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//print error msgs, if any
+        
         data.items = data.items?.filter(x => x.quantity > 0)//filters out all items with 0 quantity
 
         if(!data.items?.length)
             return res.status(400).send({status: false, message: "You must add atleast 1 qty of any product to your cart."})
         
-        if(data.items.some(x => x.quantity && (x.quantity < 0 || !Number.isInteger(x.quantity)))) error.push("Quantity of item(s) should be a an integer & > 0")
-
-        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//print error msgs, if any
-
         /**********************This Function Calculates the 'totalPrice' & 'totalQuantity'**************************/
         const total = (bodyData, productdata) => {
             let obj = {totalPrice:0}

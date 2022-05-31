@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const productModel = require('../models/productModel')
 const cartModel = require('../models/cartModel')
 const orderModel = require('../models/orderModel')
 const {userModel} = require("../models/userModel")
@@ -35,6 +36,12 @@ const createOrder = async (req, res) => {
         if(!findCart.items.length)
             return res.status(400).send({status: false, message: "There are no items in cart to checkout. May be you've already placed the Order"})
 
+        //checks if any tiems is cart are out of stock or deleted from DB
+        let arr = findCart.items.map(x => x.productId)
+        let pdInStock = (await productModel.find({_id: arr})).filter(x => x.isDeleted).map(x => x._id)
+        if(pdInStock.length) 
+            return res.status(404).send({status: false, message: `${pdInStock.join(', ')} ${pdInStock.length>1? "have":"has"} been deleted. Can't place order.`})
+        
         data.userId = userId
         data.items = findCart.items
         data.totalItems = findCart.items.length
@@ -54,7 +61,7 @@ const updateOrder = async (req, res) => {
     try{
         let data = req.body, error = []
         let userId = req.params.userId
-        let oId = data.cartId
+        let oId = data.OrderId
 
         if(!isValid(userId)) error.push('UserId is required')
         if(isValid(userId) && !mongoose.isValidObjectId(userId)) error.push(`'${userId}' is an Invalid UserId.`)
