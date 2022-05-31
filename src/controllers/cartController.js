@@ -73,8 +73,10 @@ const createCart = async (req, res) => {
         }
         /*******This function will return all products data respective to the productId sent in req.body*********/
         const getProductsData = async data => {
-            let arr = data.items.map(x => x.productId)
+            let arr = data.items.map(x => x.productId), wrongArr = []
             let products = await productModel.find({_id:arr})
+            arr.forEach(x => {if(!products.map(x => x._id.toString()).includes(x)) wrongArr.push(x)}) // pushing products ids from data.items to 'wrongArr' if they're not present in DB
+            if(wrongArr.length) return wrongArr.join(', ')
             if(products.some(x => x.isDeleted)) return false
             else return products
         }
@@ -85,8 +87,8 @@ const createCart = async (req, res) => {
                 return res.status(403).send({status: false, message: "This is not your cart. Please try updating your cart."})
 
             let products = await getProductsData(data)
-            if(!products) 
-                return res.status(404).send({status: false, message: `You're trying add some item(s) which have/has been deleted.`})
+            if(typeof products == 'string') return res.status(404).send({status: false, message: `${products} is/are not present in DB.`}) 
+            if(!products) return res.status(404).send({status: false, message: `You're trying add some item(s) which have/has been deleted.`})
 
             let tot = total(data, products)//'data' we recive from req.body & 'products' are BD data for same items
             data.totalPrice = tot.totalPrice + findCart.totalPrice
@@ -112,8 +114,8 @@ const createCart = async (req, res) => {
                 return res.status(400).send({status: false, message: "You already have a cart. Please send CartId in data to update your cart."})
 
             let products = await getProductsData(data)
-            if(!products) 
-                return res.status(404).send({status: false, message: `You're trying add some item(s) which have/has been deleted.`})
+            if(typeof products == 'string') return res.status(400).send({status: false, message: `${products} is/are not present in DB.`}) 
+            if(!products) return res.status(404).send({status: false, message: `You're trying add some item(s) which have/has been deleted.`})
 
             let tot = total(data, products)//'data' we recive from req.body & 'products' are DB data for same items
             data.totalPrice = tot.totalPrice

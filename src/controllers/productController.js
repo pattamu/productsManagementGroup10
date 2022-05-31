@@ -160,6 +160,11 @@ const updateProduct = async (req, res) => {
 
         if(isValid(data.price) && isNaN(data.price)) error.push('Price should be an Integer')
 
+        //check if currencyId is 'INR' Only
+        if(isValid(data.currencyId) && data.currencyId != 'INR') error.push("CurrencyId can only be 'INR'")
+        //check if currencyFormat is '₹' Only
+        if(isValid(data.currencyFormat) && data.currencyFormat != '₹') error.push("currencyFormat can only be '₹'")
+
         if(error.length == 1)
             return res.status(400).send({status: false, message: error.toString()})
         else if(error.length > 1)
