@@ -38,12 +38,12 @@ const createCart = async (req, res) => {
 
         /****************************To Support different types of inputs from req.body*************************/
         if(isValid(data.items) && typeof data.items == 'object' && !Array.isArray(data.items)){
-            if(!isValid(data.items.quantity)) data.items.quantity = 1
+            if(isValid(data.items.productId) && !isValid(data.items.quantity)) data.items.quantity = 1
             data.items = [data.items]
         }
         if(Object.keys(data).length && !isValid(data.items)){
             if(!isValid(data.productId)) error.push("productId is required")
-            if(!isValid(data.quantity)) data.quantity = 1
+            if(isValid(data.items?.productId) && !isValid(data.quantity)) data.quantity = 1
             if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
             data.items = [{productId: data.productId, quantity: data.quantity}]
         }
@@ -58,11 +58,15 @@ const createCart = async (req, res) => {
         if(data.items.some(x => !isValid(x.productId))) error.push("'productId' is required for each product.")
         if(data.items.some(x => isValid(x.productId) && !mongoose.isValidObjectId(x.productId))) error.push("ProductId(s) is/are Invalid.")
         data.items.forEach(x => {if(!isValid(x.quantity)) x.quantity = 1}) //if 'quantity' key is not present take 'quantity' as 1 by default
+        
+        data.items = data.items?.filter(x => x.quantity > 0)//filters out all items with 0 quantity
+
+        if(!data.items?.length)
+            return res.status(400).send({status: false, message: "You must add atleast 1 qty of any product to your cart."})
+        
         if(data.items.some(x => x.quantity && (x.quantity < 0 || !Number.isInteger(x.quantity)))) error.push("Quantity of item(s) should be a an integer & > 0")
 
         if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//print error msgs, if any
-
-        data.items = data.items?.filter(x => x.quantity > 0)//filters out all items with 0 quantity
 
         /**********************This Function Calculates the 'totalPrice' & 'totalQuantity'**************************/
         const total = (bodyData, productdata) => {
