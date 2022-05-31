@@ -165,8 +165,9 @@ const updateProduct = async (req, res) => {
         else if(error.length > 1)
             return res.status(400).send({status: false, message: error})
 
-        data['$addToSet'] = {availableSizes: {$each:data.availableSizes||[]}}
-        delete data.availableSizes
+        // data['$addToSet'] = {availableSizes: {$each:data.availableSizes||[]}}
+        // delete data.availableSizes
+        data.availableSizes = [...new Set(data.availableSizes)]
         let updatedProduct = await productModel.findOneAndUpdate({_id:pId},data,{new:true})
         res.status(200).send({status: true, message: 'successfully updated', data: updatedProduct})
 
