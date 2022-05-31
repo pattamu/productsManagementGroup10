@@ -26,7 +26,7 @@ const userLogin = async (req, res) => {
                 return res.status(401).send({status: false, message: 'Password is Invalid.'})
             let token = generateToken(userCheck)
             res.setHeader('x-auth-key', token)
-            res.status(201).send({
+            res.status(200).send({
                 status: true,
                 message: "User login successfull",
                 data: {
@@ -36,7 +36,7 @@ const userLogin = async (req, res) => {
             })
         }
         else
-            res.status(401).send({
+            res.status(400).send({
                 status: false,
                 messgae: "Please enter Valid E-mail and Password Only."
             })

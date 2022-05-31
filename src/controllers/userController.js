@@ -115,10 +115,10 @@ const getUser = async (req, res) => {
     try{
         let userId = req.params.userId
         if(!mongoose.isValidObjectId(userId))
-            return res.status(401).send({status: false, message: `'${userId}' is an Invalid userId.`})
+            return res.status(400).send({status: false, message: `'${userId}' is an Invalid userId.`})
 
         if(userId != req.headers['valid-user'])
-            return res.status(401).send({status: false, message: 'User not Authorised.'})
+            return res.status(403).send({status: false, message: 'User not Authorised.'})
         
         let userDetails = await userModel.findById(userId)
         res.status(200).send({status: true, message: 'success', data: userDetails})
@@ -143,7 +143,7 @@ const updateUser = async (req, res) => {
         let findPhone = await userModel.findOne({phone: data.phone})
 
         if(!mongoose.isValidObjectId(userId))
-            return res.status(401).send({status: false, message: `'${userId}' is not a valid ObjectId.`})
+            return res.status(400).send({status: false, message: `'${userId}' is not a valid ObjectId.`})
 
         let findUser = await userModel.findOne({_id: userId})
         if(!findUser)
@@ -151,7 +151,7 @@ const updateUser = async (req, res) => {
 
         /***************************************User AuthoriZation check**********************************/
         if(userId != req.headers['valid-user'])
-            return res.status(401).send({status: false, message: "User not Authorised. Can't update data"})
+            return res.status(403).send({status: false, message: "User not Authorised. Can't update data"})
         /**************************************************************************************************/
         
         //checking if body is empty

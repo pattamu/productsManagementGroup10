@@ -32,7 +32,7 @@ const createCart = async (req, res) => {
         if(!findUser)
             return res.status(404).send({status: false, message: "User Profile doesn't exist. Try creating your profile."})
         if(userId != req.headers['valid-user'])
-            return res.status(401).send({status: false, message: 'User not Authorised.'})
+            return res.status(403).send({status: false, message: 'User not Authorised.'})
         if(isValid(cartId) && !findCart)
             return res.status(404).send({status: false, message: 'Enter valid CartId if you already have a cart or create a new cart.'})
 
@@ -82,7 +82,7 @@ const createCart = async (req, res) => {
         
         if(findCart){
             if(userId != findCart.userId)
-                return res.status(401).send({status: false, message: "This is not your cart. Please try updating your cart."})
+                return res.status(403).send({status: false, message: "This is not your cart. Please try updating your cart."})
 
             let products = await getProductsData(data)
             if(!products) 
@@ -104,7 +104,7 @@ const createCart = async (req, res) => {
             })
             data.totalItems = data.items.length
             let updateCart = await cartModel.findOneAndUpdate({_id:cartId, isDeleted: false},data,{new: true})
-            res.status(201).send({status: true, message: "Cart Updated.", data: updateCart})
+            res.status(200).send({status: true, message: "Cart Updated.", data: updateCart})
         }
         else{
             let findCart = await cartModel.findOne({userId})
@@ -174,9 +174,9 @@ const updateCart = async (req, res) => {
         if(!findUser)
             return res.status(404).send({status: false, message: "User Profile doesn't exist. Can't update Cart."})
         if(userId != req.headers['valid-user'])
-            return res.status(401).send({status: false, message: 'User not Authorised.'})
+            return res.status(403).send({status: false, message: 'User not Authorised.'})
         if(findCart && userId != findCart.userId)
-            return res.status(401).send({status: false, message: "This is not your cart. Please try updating your cart."})
+            return res.status(403).send({status: false, message: "This is not your cart. Please try updating your cart."})
         if(!findCart) 
             return res.status(404).send({status: false, message: "Invalid cartId/You don't have a cart. Kindly provide correct cartId"})
         if(findCart && !findCart.items.length)
@@ -232,7 +232,7 @@ const getCart = async (req, res) => {
         if(!findUser)
             return res.status(404).send({status: false, message: `User doesn't exist.`})
         if(userId != req.headers['valid-user'])
-            return res.status(401).send({status: false, message: 'User not Authorised. Please sign in first.'})
+            return res.status(403).send({status: false, message: 'User not Authorised. Please sign in first.'})
         
         let findCart = await cartModel.findOne({userId})
         if(!findCart)
@@ -258,7 +258,7 @@ const deleteCart = async (req, res) => {
         if(!findUser)
             return res.status(404).send({status: false, message: `User doesn't exist.`})
         if(userId != req.headers['valid-user'])
-            return res.status(401).send({status: false, message: 'User not Authorised. Please sign in first.'})
+            return res.status(403).send({status: false, message: 'User not Authorised. Please sign in first.'})
 
         let findCart = await cartModel.findOne({userId})
 

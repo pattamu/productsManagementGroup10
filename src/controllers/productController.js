@@ -110,7 +110,7 @@ const getProduct = async (req, res) => {
         let pId = req.params.productId
 
         if(!mongoose.isValidObjectId(pId))
-            return res.status(401).send({status: false, message: `'${pId}' is an Invalid ProductId.`})
+            return res.status(400).send({status: false, message: `'${pId}' is an Invalid ProductId.`})
 
         let product = await productModel.findById(pId)
 
@@ -134,7 +134,7 @@ const updateProduct = async (req, res) => {
         let error = []
 
         if(!mongoose.isValidObjectId(pId))
-            return res.status(401).send({status: false, message: `'${pId}' is an Invalid ProductId.`})
+            return res.status(400).send({status: false, message: `'${pId}' is an Invalid ProductId.`})
 
         let findProduct = await productModel.findOne({_id: pId, isDeleted: false})
         if(!findProduct)
@@ -182,7 +182,7 @@ const deleteProduct = async (req, res) => {
         let pId = req.params.productId
 
         if(!mongoose.isValidObjectId(pId))
-            return res.status(401).send({status: false, message: `'${pId}' is an Invalid ProductId.`})
+            return res.status(400).send({status: false, message: `'${pId}' is an Invalid ProductId.`})
 
         let deletedProduct = await productModel.findOneAndUpdate({_id: pId, isDeleted: false},{isDeleted: true, deletedAt: Date.now()},{new: true})
 

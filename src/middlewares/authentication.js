@@ -14,7 +14,7 @@ const decodeToken = (token) => {
 const userAuthentication = async (req,res,next) => {
     try{
         let token = req.headers['authorization']
-        if(!token) return res.status(401).send({status : false, message : "Token must be present"})
+        if(!token) return res.status(400).send({status : false, message : "Token must be present"})
 
         let verifyToken = decodeToken(token)
         if(!verifyToken)
