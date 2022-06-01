@@ -198,17 +198,20 @@ const updateCart = async (req, res) => {
 
         let arr = data.items.map(x => x.productId)
         let products = await productModel.find({_id: arr})
-        findCart.items.forEach(ele => {
+        for(let ele of findCart.items){
             let temp = data.items.find(x => x.productId.toString() == ele.productId)
             if(temp?.removeProduct == 0) {
                 findCart.totalPrice -= ele.quantity * products.find(x => x._id.toString() == ele.productId).price
                 ele.quantity = 0
             }
             else if(temp?.removeProduct == 1) {
+                let deletedItems = products.map(x => x.isDeleted && x._id.toString()), err = []
+                if(deletedItems.includes(temp.productId)) err.push(temp.productId)
+                if(err.length) return res.status(404).send({status: false, message: `${err.join(', ')} item${err.length>1?'s are':' is'} deleted from DB/OutofStock. Try removing instead.`})
                 findCart.totalPrice -= 1 * products.find(x => x._id.toString() == ele.productId).price
                 --ele.quantity
             }
-        })
+        }
         findCart.items = findCart.items.filter(x => x.quantity != 0)
         findCart.totalQuantity = findCart.items.reduce((acc,curr) => {acc += curr.quantity; return acc},0)
         findCart.totalItems = findCart.items.length
