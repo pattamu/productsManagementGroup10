@@ -59,7 +59,7 @@ const createOrder = async (req, res) => {
 
 const updateOrder = async (req, res) => {
     try{
-        let data = req.body, error = [], cancelOrder
+        let data = req.body, error = []
         let userId = req.params.userId
         let oId = data.orderId
         let status = data.status
@@ -92,10 +92,7 @@ const updateOrder = async (req, res) => {
         if(!findOrder.cancellable && ['cancled', 'cancelled'].includes(status))
             return res.status(405).send({status: false, message: "This order can't be cancelled. SORRY!!!"})
 
-        if(status == 'cancled' || status == 'cancelled')
-            cancelOrder = await orderModel.findOneAndUpdate({_id: oId},{status, deletedAt: Date.now()},{new: true})
-        else
-            cancelOrder = await orderModel.findOneAndUpdate({_id: oId},{status},{new: true})
+        let cancelOrder = await orderModel.findOneAndUpdate({_id: oId},{status},{new: true})
 
         res.status(200).send({status: true, message: "Order cancelled successfully.", data: cancelOrder})
 
