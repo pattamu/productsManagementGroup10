@@ -21,11 +21,6 @@ const createCart = async (req, res) => {
 
         if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
 
-        if(typeof data.items == 'string' && !isJSON(data.items))
-            return res.status(400).send({status: false, message: "Please send a valid JSON data for items."})
-
-        if(typeof data.items == 'string') data.items = JSON.parse(data.items)
-
         let findUser = await userModel.findById(userId)
         let findCart = await cartModel.findById(cartId)
 
@@ -33,82 +28,35 @@ const createCart = async (req, res) => {
             return res.status(404).send({status: false, message: "User Profile doesn't exist. Try creating your profile."})
         if(userId != req.headers['valid-user'])
             return res.status(403).send({status: false, message: 'User not Authorised.'})
+        if(!Object.keys(data).length)
+            return res.status(400).send({status: false, message: "Enter product Data to add to your cart."})
         if(isValid(cartId) && !findCart)
             return res.status(404).send({status: false, message: 'Enter valid CartId if you already have a cart or create a new cart.'})
 
-        /****************************To Support different types of inputs from req.body*************************/
-        if(isValid(data.items) && typeof data.items == 'object' && !Array.isArray(data.items)){
-            if(isValid(data.items.productId) && !isValid(data.items.quantity)) data.items.quantity = 1
-            data.items = [data.items]
-        }
-        if(Object.keys(data).length && !isValid(data.items)){
-            if(!isValid(data.productId)) error.push("productId is required")
-            if(isValid(data.items?.productId) && !isValid(data.quantity)) data.quantity = 1
-            if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
-            data.items = [{productId: data.productId, quantity: data.quantity}]
-        }
-        /*******************************************************************************************************/
+        if(!isValid(data.productId)) error.push("productId is required")
+        if(isValid(data.productId) && !mongoose.isValidObjectId(data.productId)) error.push("productId is Invalid")
+        if(!isValid(data.quantity)) data.quantity = 1
+        if(data.quantity < 1 || !Number.isInteger(data.quantity)) error.push("Quantity of item(s) should be a an integer & > 0.")
 
-        if(data.items?.length)
-            data.items = data.items?.filter(x => Object.keys(x).length)//filtering out empty Objects from items Array
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
 
-        if(!Object.keys(data).length || !data.items?.length)
-            return res.status(400).send({status: false, message: "You must add atleast 1 qty of any product to your cart."})
+        let product = await productModel.findById(data.productId)
 
-        if(data.items.some(x => !isValid(x.productId))) error.push("'productId' is required for each product.")
-        if(data.items.some(x => isValid(x.productId) && !mongoose.isValidObjectId(x.productId))) error.push("ProductId(s) is/are Invalid.")
-        data.items.forEach(x => {if(!isValid(x.quantity)) x.quantity = 1}) //if 'quantity' key is not present take 'quantity' as 1 by default
-        
-        if(data.items.some(x => x.quantity && (x.quantity < 0 || !Number.isInteger(x.quantity)))) error.push("Quantity of item(s) should be a an integer & > 0")
-        
-        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//print error msgs, if any
-        
-        data.items = data.items?.filter(x => x.quantity > 0)//filters out all items with 0 quantity
+        if(!product || product.isDeleted) return res.status(404).send({status: false, message: "This product is either Out of Stock or deleted"})
 
-        if(!data.items?.length)
-            return res.status(400).send({status: false, message: "You must add atleast 1 qty of any product to your cart."})
-        
-        /**********************This Function Calculates the 'totalPrice' & 'totalQuantity'**************************/
-        const total = (bodyData, productdata) => {
-            let obj = {totalPrice:0}
-            for(let i in productdata) obj.totalPrice += productdata[i].price * bodyData.items[i].quantity
-            obj.totalQuantity = bodyData.items.reduce((acc,curr) => {acc += curr.quantity; return acc},0)
-            return obj
-        }
-        /*******This function will return all products data respective to the productId sent in req.body*********/
-        const getProductsData = async data => {
-            let arr = data.items.map(x => x.productId), wrongArr = []
-            let products = await productModel.find({_id:arr})
-            arr.forEach(x => {if(!products.map(x => x._id.toString()).includes(x)) wrongArr.push(x)}) // pushing products ids from data.items to 'wrongArr' if they're not present in DB
-            if(wrongArr.length) return wrongArr.join(', ')
-            if(products.some(x => x.isDeleted)) return false
-            else return products
-        }
-        /********************************************************************************************************/
-        
         if(findCart){
             if(userId != findCart.userId)
                 return res.status(403).send({status: false, message: "This is not your cart. Please try updating your cart."})
 
-            let products = await getProductsData(data)
-            if(typeof products == 'string') return res.status(404).send({status: false, message: `${products} is/are not present in DB.`}) 
-            if(!products) return res.status(404).send({status: false, message: `You're trying add some item(s) which have/has been deleted.`})
+            let temp = findCart.items.find(x => x.productId.toString() == data.productId)
+            if(temp) temp.quantity +=data.quantity
+            else findCart.items.push({productId: data.productId, quantity: data.quantity})
 
-            let tot = total(data, products)//'data' we recive from req.body & 'products' are BD data for same items
-            data.totalPrice = tot.totalPrice + findCart.totalPrice
-            data.totalQuantity = tot.totalQuantity + findCart.totalQuantity
-
-            for(let i in data.items){
-                let temp = findCart.items.find(x => x.productId == data.items[i].productId)
-                if(temp)
-                    data.items[i].quantity += temp.quantity
-            }
-            let temp = data.items.map(x => x.productId)
-            findCart.items.forEach(x => {
-                if(!temp.includes(x.productId.toString()))//if ObjId is in Object format we've to convert to string to compare 
-                    data.items.push(x)
-            })
+            data.items = findCart.items
             data.totalItems = data.items.length
+            data.totalQuantity = data.items.reduce((acc,curr) => {acc += curr.quantity; return acc},0)
+            data.totalPrice = findCart.totalPrice + data.quantity * product.price
+
             let updateCart = await cartModel.findOneAndUpdate({_id:cartId, isDeleted: false},data,{new: true})
             res.status(200).send({status: true, message: "Cart Updated.", data: updateCart})
         }
@@ -117,15 +65,12 @@ const createCart = async (req, res) => {
             if(findCart)
                 return res.status(400).send({status: false, message: "You already have a cart. Please send CartId in data to update your cart."})
 
-            let products = await getProductsData(data)
-            if(typeof products == 'string') return res.status(400).send({status: false, message: `${products} is/are not present in DB.`}) 
-            if(!products) return res.status(404).send({status: false, message: `You're trying add some item(s) which have/has been deleted.`})
-
-            let tot = total(data, products)//'data' we recive from req.body & 'products' are DB data for same items
-            data.totalPrice = tot.totalPrice
-            data.totalQuantity = tot.totalQuantity
-            data.totalItems = data.items.length
             data.userId = userId
+            data.items = [{productId: data.productId, quantity: data.quantity}]
+            data.totalItems = data.items.length
+            data.totalQuantity = data.quantity
+            data.totalPrice = product.price
+            
             let createcart = await cartModel.create(data)
             res.status(201).send({status: true, message: "cart created successfully.", data: createcart})
         }
@@ -138,44 +83,25 @@ const createCart = async (req, res) => {
 const updateCart = async (req, res) => {
     try{
         let data = req.body, error = []
-
-        if(typeof data.items == 'string' && !isJSON(data.items))
-            return res.status(400).send({status: false, message: "Please send a valid JSON data for items."})
-
-        if(typeof data.items == 'string') data.items = JSON.parse(data.items)
-
         let userId = req.params.userId
         let cartId = data.cartId
-
-        /****************************To Support different types of inputs from req.body*************************/
-        if(isValid(data.items) && typeof data.items == 'object' && !Array.isArray(data.items))
-            data.items = [data.items]
-        if(Object.keys(data).length && !isValid(data.items)){
-            if(!isValid(data.productId)) error.push("productId is required")
-            if(!isValid(data.removeProduct)) error.push("quantity is required")
-            if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
-            data.items = [{productId: data.productId, removeProduct: data.removeProduct}]
-        }
-        /*******************************************************************************************************/
-        if(data.items?.length)
-            data.items = data.items?.filter(x => Object.keys(x).length)//filtering out empty Objects from items Array
-
-        if(!Object.keys(data).length || !data.items?.length)
-            return res.status(400).send({status: false, message: "Please provide product data to update your cart."})
+        let productId = data.productId
         
-        if(!isValid(userId)) error.push('UserId is required')
-        if(isValid(userId) && !mongoose.isValidObjectId(userId)) error.push(`'${userId}' is an Invalid UserId.`)
-        if(!isValid(cartId)) error.push('CartId is required')
-        if(isValid(cartId) && !mongoose.isValidObjectId(cartId)) error.push(`'${cartId}' is an Invalid CartId.`)
+        if(!Object.keys(data).length)
+            return res.status(400).send({status: false, message: "Please provide product data to update your cart."})
 
-        if(data.items?.some(x => !isValid(x.productId) || !isValid(x.removeProduct))) error.push("'productId' & 'removeProduct' both required for each product.")
-        if(data.items?.some(x => isValid(x.productId) && !mongoose.isValidObjectId(x.productId))) error.push("ProductId(s) is/are Invalid.")
-        if(data.items?.some(x => x?.removeProduct > 1 || x?.removeProduct < 0)) error.push("'removeProduct' for each product should be 1 or 0.")
+        if(!isValid(cartId)) error.push("cartId is required")
+        if(isValid(cartId) && !mongoose.isValidObjectId(cartId)) error.push(`'${cartId}' is an Invalid CartId.`)
+        if(!isValid(productId)) error.push("productId is required")
+        if(isValid(productId) && !mongoose.isValidObjectId(productId)) error.push(`'${productId}' is an Invalid ProductId.`)
+        if(!isValid(data.removeProduct)) error.push("removeProduct is required")
+        if(data.removeProduct > 1 || data.removeProduct < 0) error.push("'removeProduct' for each product should be 1 or 0.")
 
         if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
 
         let findUser = await userModel.findById(userId)
         let findCart = await cartModel.findById(cartId)
+        let product = await productModel.findById(productId)
 
         if(!findUser)
             return res.status(404).send({status: false, message: "User Profile doesn't exist. Can't update Cart."})
@@ -188,39 +114,32 @@ const updateCart = async (req, res) => {
         if(findCart && !findCart.items.length)
             return res.status(400).send({status: false, message: "Cart is empty. Can't update anything in it."})
 
-        let temp = findCart.items.map(x => x.productId.toString())
+        let itemsinCart = findCart.items.map(x => x.productId.toString())
+        if(!itemsinCart.includes(productId))
+            return res.status(400).send({status: false, message: "This item is not in the cart. Try updating item that is already in your cart."})
 
-        for(let i in data.items){
-            if(!temp.includes(data.items[i].productId))
-                return res.status(400).send({status: false, 
-                    message: "Some items are not present in the cart. Try updating items that are already in your cart."})
-        }//can't use forEach here to avoide "can't set Header after sending to client response error"
-
-        let arr = data.items.map(x => x.productId)
-        let products = await productModel.find({_id: arr})
         for(let ele of findCart.items){
-            let temp = data.items.find(x => x.productId.toString() == ele.productId)
-            if(temp?.removeProduct == 0) {
-                findCart.totalPrice -= ele.quantity * products.find(x => x._id.toString() == ele.productId).price
-                ele.quantity = 0
-            }
-            else if(temp?.removeProduct == 1) {
-                let deletedItems = products.map(x => x.isDeleted && x._id.toString()), err = []
-                if(deletedItems.includes(temp.productId)) err.push(temp.productId)
-                if(err.length) return res.status(404).send({status: false, message: `${err.join(', ')} item${err.length>1?'s are':' is'} deleted from DB/OutofStock. Try removing instead.`})
-                findCart.totalPrice -= 1 * products.find(x => x._id.toString() == ele.productId).price
-                --ele.quantity
+            if(ele.productId == data.productId){
+                if(data.removeProduct == 0){
+                    findCart.totalPrice -= ele.quantity * product.price
+                    ele.quantity = 0
+                }
+                else if(data.removeProduct == 1){
+                    if(product.isDeleted) return res.status(404).send({status: false, message: "This product is deleted from DB/OutofStock. Try removing instead."})
+                    findCart.totalPrice -= 1 * product.price
+                    --ele.quantity
+                }
             }
         }
+        
         findCart.items = findCart.items.filter(x => x.quantity != 0)
         findCart.totalQuantity = findCart.items.reduce((acc,curr) => {acc += curr.quantity; return acc},0)
         findCart.totalItems = findCart.items.length
+
         let updatedCart = await cartModel.findOneAndUpdate({_id:cartId},findCart,{new: true})
-        if(!updatedCart.items.length){
-            res.status(200).send({status: false, message: 'Cart Emptied.', data: updatedCart})
-            // await cartModel.findOneAndDelete({_id:updatedCart._id})
-            return
-        }
+        if(!updatedCart.items.length)
+            return res.status(200).send({status: false, message: 'Cart Emptied.', data: updatedCart})
+
         res.status(200).send({status: true, message: 'Cart Updated Successfully.', data: updatedCart})
 
     }catch(err){
@@ -278,7 +197,7 @@ const deleteCart = async (req, res) => {
         if(!deleteCart)
             return res.status(404).send({status: false, message: "User doesn't have a cart to delete."})
 
-        res.status(200).send({status: true, message: "Cart deleted successfully.", data: deleteCart})
+        res.status(204).send({status: true, message: "Cart deleted successfully."})
 
     }catch(err){
         res.status(500).send({status: false, message: err.message})
