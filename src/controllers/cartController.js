@@ -152,7 +152,7 @@ const updateCart = async (req, res) => {
             data.items = [data.items]
         if(Object.keys(data).length && !isValid(data.items)){
             if(!isValid(data.productId)) error.push("productId is required")
-            if(!isValid(data.removeProduct)) error.push("quantity is required")
+            if(!isValid(data.removeProduct)) error.push("removeProduct is required")
             if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
             data.items = [{productId: data.productId, removeProduct: data.removeProduct}]
         }
@@ -278,7 +278,7 @@ const deleteCart = async (req, res) => {
         if(!deleteCart)
             return res.status(404).send({status: false, message: "User doesn't have a cart to delete."})
 
-        res.status(200).send({status: true, message: "Cart deleted successfully.", data: deleteCart})
+        res.status(204).send({status: true, message: "Cart deleted successfully."})
 
     }catch(err){
         res.status(500).send({status: false, message: err.message})
