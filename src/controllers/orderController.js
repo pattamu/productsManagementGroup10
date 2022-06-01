@@ -62,6 +62,7 @@ const updateOrder = async (req, res) => {
         let data = req.body, error = []
         let userId = req.params.userId
         let oId = data.OrderId
+        let status = data.status || req.query.status || req.params.status
 
         if(!isValid(userId)) error.push('UserId is required')
         if(isValid(userId) && !mongoose.isValidObjectId(userId)) error.push(`'${userId}' is an Invalid UserId.`)
@@ -80,14 +81,16 @@ const updateOrder = async (req, res) => {
             return res.status(403).send({status: false, message: 'User not Authorised. Please sign in first.'})
         if(!findOrder)
             return res.status(404).send({status: false, message: "Can't find the Order, Check if you've placed any Order."})
-        if(findOrder.status == 'cancled')
-            return res.status(404).send({status: false, message: "Order has been cancelled. Can't Update."})
+        if(findOrder.status != 'pending')
+            return res.status(404).send({status: false, message: `Order status: ${findOrder.status}. Can't Update.`})
+        if(isValid(data.status) && !['completed', 'cancled', 'cancelled'].includes(status))
+            return res.status(400).send({status: false, message: "Only 'completed' or 'cancled' status code are allowed."})
         if(findOrder && findOrder.userId != userId)
             return res.status(403).send({status: false, message: "This order doesn't belong to the user. Can't Update."})
-        if(!findOrder.cancellable)
-            return res.status(405).send({status: false, message: "This order can't be edited/updated. SORRY!!!"})
+        if(!findOrder.cancellable && ['cancled', 'cancelled'].includes(status))
+            return res.status(405).send({status: false, message: "This order can't be cancelled. SORRY!!!"})
 
-        let cancelOrder = await orderModel.findOneAndUpdate({_id: oId},{status: 'cancled'},{new: true})
+        let cancelOrder = await orderModel.findOneAndUpdate({_id: oId},{status},{new: true})
         res.status(200).send({status: true, message: "Order cancelled successfully.", data: cancelOrder})
 
     }catch(err){
