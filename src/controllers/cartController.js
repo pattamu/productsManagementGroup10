@@ -97,7 +97,8 @@ const updateCart = async (req, res) => {
         if(!isValid(productId)) error.push("productId is required")
         if(isValid(productId) && !mongoose.isValidObjectId(productId)) error.push(`'${productId}' is an Invalid ProductId.`)
         if(!isValid(data.removeProduct)) error.push("removeProduct is required")
-        if(data.removeProduct > 1 || data.removeProduct < 0 || isNaN(data.removeProduct)) error.push("'removeProduct' for each product should be 1 or 0.")
+        if(isValid(data.removeProduct) && (data.removeProduct > 1 || data.removeProduct < 0 || isNaN(data.removeProduct)))
+            error.push("'removeProduct' for each product should be 1 or 0.")
 
         if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//Printing all Bad request Errors
 
