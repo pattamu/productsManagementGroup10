@@ -48,8 +48,8 @@ const createCart = async (req, res) => {
             if(userId != findCart.userId)
                 return res.status(403).send({status: false, message: "This is not your cart. Please try updating your cart."})
 
-            let temp = findCart.items.find(x => x.productId.toString() == data.productId)
-            if(temp) temp.quantity +=data.quantity
+            let item = findCart.items.find(x => x.productId == data.productId)
+            if(item) item.quantity +=data.quantity
             else findCart.items.push({productId: data.productId, quantity: data.quantity})
 
             data.items = findCart.items
@@ -95,7 +95,7 @@ const updateCart = async (req, res) => {
         if(!isValid(productId)) error.push("productId is required")
         if(isValid(productId) && !mongoose.isValidObjectId(productId)) error.push(`'${productId}' is an Invalid ProductId.`)
         if(!isValid(data.removeProduct)) error.push("removeProduct is required")
-        if(data.removeProduct > 1 || data.removeProduct < 0) error.push("'removeProduct' for each product should be 1 or 0.")
+        if(data.removeProduct > 1 || data.removeProduct < 0 || isNaN(data.removeProduct)) error.push("'removeProduct' for each product should be 1 or 0.")
 
         if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
 
@@ -118,23 +118,21 @@ const updateCart = async (req, res) => {
         if(!itemsinCart.includes(productId))
             return res.status(400).send({status: false, message: "This item is not in the cart. Try updating item that is already in your cart."})
 
-        for(let ele of findCart.items){
-            if(ele.productId == data.productId){
-                if(data.removeProduct == 0){
-                    findCart.totalPrice -= ele.quantity * product.price
-                    ele.quantity = 0
-                }
-                else if(data.removeProduct == 1){
-                    if(product.isDeleted) return res.status(404).send({status: false, message: "This product is deleted from DB/OutofStock. Try removing instead."})
-                    findCart.totalPrice -= 1 * product.price
-                    --ele.quantity
-                }
-            }
+        //finding the product in cart that user requsting to reduce quantity for
+        let item = findCart.items.find(x => x.productId == productId)//This works bcz of pass by reference concept. the obj that is returned to the 'item' has same address that of the item in findcart.items
+        if(data.removeProduct == 0){
+            findCart.totalPrice -= item.quantity * product.price
+            item.quantity = 0
         }
-        
-        findCart.items = findCart.items.filter(x => x.quantity != 0)
-        findCart.totalQuantity = findCart.items.reduce((acc,curr) => {acc += curr.quantity; return acc},0)
-        findCart.totalItems = findCart.items.length
+        else if(data.removeProduct == 1){
+            if(product.isDeleted) return res.status(404).send({status: false, message: "This product is deleted from DB/OutofStock. Try removing instead."})
+            findCart.totalPrice -= 1 * product.price
+            item.quantity--
+        }
+
+        findCart.items = findCart.items.filter(x => x.quantity > 0)//filtering out products with 0 quantity in cart 
+        findCart.totalQuantity = findCart.items.reduce((acc,curr) => {acc += curr.quantity; return acc},0)//calculating total quantity for all items in cart
+        findCart.totalItems = findCart.items.length//calculating number of items present in cart
 
         let updatedCart = await cartModel.findOneAndUpdate({_id:cartId},findCart,{new: true})
         if(!updatedCart.items.length)
