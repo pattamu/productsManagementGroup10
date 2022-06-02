@@ -27,11 +27,9 @@ const createProduct = async (req, res) => {
         if(isValid(data.price) && (isNaN(data.price) || parseInt(data.price) < 0)) error.push('Price should be a +ve Integer')
 
         //check if currencyId is 'INR' Only
-        // if(isValid(data.currencyId) && data.currencyId != 'INR') error.push("CurrencyId can only be 'INR'")
-        if(isValid(data.currencyId) && !['INR','USD'].includes(data.currencyId)) error.push("CurrencyId can only be 'INR'/'USD")
+        if(isValid(data.currencyId) && data.currencyId != 'INR') error.push("CurrencyId can only be 'INR'")
         //check if currencyFormat is '₹' Only
-        // if(isValid(data.currencyFormat) && data.currencyFormat != '₹') error.push("currencyFormat can only be '₹'")
-        if(isValid(data.currencyFormat) && !['₹','$'].includes(data.currencyFormat)) error.push("currencyFormat can only be '₹'/'$")
+        if(isValid(data.currencyFormat) && data.currencyFormat != '₹') error.push("currencyFormat can only be '₹'")
 
         //check if isFreeShipping is Boolean
         if(isValid(data.isFreeShipping) && !['true','false'].includes(data.isFreeShipping))
@@ -164,10 +162,7 @@ const updateProduct = async (req, res) => {
         //check if currencyFormat is '₹' Only
         if(isValid(data.currencyFormat) && data.currencyFormat != '₹') error.push("currencyFormat can only be '₹'")
 
-        if(error.length == 1)
-            return res.status(400).send({status: false, message: error.toString()})
-        else if(error.length > 1)
-            return res.status(400).send({status: false, message: error})
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
 
         // data['$addToSet'] = {availableSizes: {$each:data.availableSizes||[]}}
         // delete data.availableSizes
