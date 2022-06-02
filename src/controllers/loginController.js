@@ -7,7 +7,7 @@ const secret = process.env.JWT_SECRET || "product management group-10."
 const exp = process.env.JWT_EXP || '50d'
 
 
-//Generate token function
+//Generate Token function
 const generateToken = (userData) => {
     return jwt.sign({
         userId: userData._id.toString(),
@@ -29,7 +29,7 @@ const userLogin = async (req, res) => {
             if(!await bcrypt.compare(data.password, userCheck.password))
                 return res.status(401).send({status: false, message: 'Password is Invalid.'})
             let token = generateToken(userCheck)
-            res.setHeader('x-auth-key', token)
+            res.setHeader('x-auth-key', token)//This is not needed. Just setting token in response header bcz it's easy to copy.😄
             res.status(200).send({
                 status: true,
                 message: "User login successfull",
@@ -42,7 +42,7 @@ const userLogin = async (req, res) => {
         else
             res.status(400).send({
                 status: false,
-                messgae: "Please enter Valid E-mail and Password Only."
+                messgae: "Please enter Valid E-mail and Password Both."
             })
     } catch (err) {
         console.log(err.message)
