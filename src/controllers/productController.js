@@ -58,7 +58,7 @@ const createProduct = async (req, res) => {
         if(isValid(data.installments) && !Number.isInteger(Number(data.installments)))
             error.push('Installment can only be a Integer.')    
 
-        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//Printing all Bad request Errors
 
         data.availableSizes = [...new Set(data.availableSizes)]
         data.productImage = await uploadFile(req.files[0])//getting aws link for the uploaded file after stroing it in aws s3
@@ -162,7 +162,7 @@ const updateProduct = async (req, res) => {
         //check if currencyFormat is '₹' Only
         if(isValid(data.currencyFormat) && data.currencyFormat != '₹') error.push("currencyFormat can only be '₹'")
 
-        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//Printing all Bad request Errors
 
         // data['$addToSet'] = {availableSizes: {$each:data.availableSizes||[]}}
         // delete data.availableSizes

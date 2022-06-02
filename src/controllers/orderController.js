@@ -3,7 +3,7 @@ const productModel = require('../models/productModel')
 const cartModel = require('../models/cartModel')
 const orderModel = require('../models/orderModel')
 const {userModel} = require("../models/userModel")
-const {isValid} = require('../validation/validator')
+const {printError, isValid} = require('../validation/validator')
 
 
 const createOrder = async (req, res) => {
@@ -17,12 +17,11 @@ const createOrder = async (req, res) => {
         if(!isValid(cartId)) error.push('CartId is required')
         if(isValid(cartId) && !mongoose.isValidObjectId(cartId)) error.push(`'${cartId}' is an Invalid CartId.`)
     
-        if(error.length == 1) return res.status(400).send({status: false, message: error.toString()})
-        else if(error.length > 1) return res.status(400).send({status: false, message: error})
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//Printing all Bad request Errors
 
         let findUser = await userModel.findById(userId)
         // let findCart = await cartModel.findById(cartId)
-        let findCart = await cartModel.findOne({userId})
+        let findCart = await cartModel.findOne({userId})//finding cart with UserId to minimize some codes which otherwise'd berequired
 
         if(!findUser)
             return res.status(404).send({status: false, message: `User doesn't exist.`})
@@ -69,9 +68,8 @@ const updateOrder = async (req, res) => {
         if(!isValid(oId)) error.push('OrderId is required')
         if(isValid(oId) && !mongoose.isValidObjectId(oId)) error.push(`'${oId}' is an Invalid OrderId.`)
     
-        if(error.length == 1) return res.status(400).send({status: false, message: error.toString()})
-        else if(error.length > 1) return res.status(400).send({status: false, message: error})
-    
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//Printing all Bad request Errors
+
         let findUser = await userModel.findById(userId)
         let findOrder = await orderModel.findOne({_id: oId, isDeleted: false})
 

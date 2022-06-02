@@ -19,7 +19,7 @@ const createCart = async (req, res) => {
         if(isValid(userId) && !mongoose.isValidObjectId(userId)) error.push(`'${userId}' is an Invalid UserId.`)
         if(isValid(cartId) && !mongoose.isValidObjectId(cartId)) error.push(`'${cartId}' is an Invalid CartId.`)
 
-        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//Printing all Bad request Errors
 
         let findUser = await userModel.findById(userId)
         let findCart = await cartModel.findById(cartId)
@@ -38,7 +38,7 @@ const createCart = async (req, res) => {
         if(!isValid(data.quantity)) data.quantity = 1
         if(data.quantity < 1 || !Number.isInteger(Number(data.quantity)) || isNaN(data.quantity)) error.push("Quantity of item(s) should be a an integer & > 0.")
 
-        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//Printing all Bad request Errors
 
         let product = await productModel.findById(data.productId)
 
@@ -97,7 +97,7 @@ const updateCart = async (req, res) => {
         if(!isValid(data.removeProduct)) error.push("removeProduct is required")
         if(data.removeProduct > 1 || data.removeProduct < 0 || isNaN(data.removeProduct)) error.push("'removeProduct' for each product should be 1 or 0.")
 
-        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})//Printing all Bad request Errors
 
         let findUser = await userModel.findById(userId)
         let findCart = await cartModel.findById(cartId)
