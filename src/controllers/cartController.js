@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const cartModel = require('../models/cartModel')
 const productModel = require('../models/productModel')
 const {userModel} = require("../models/userModel")
-const {printError, isValid, isJSON} = require('../validation/validator')
+const {printError, isValid} = require('../validation/validator')
 
 
 //createcart can take input in raw JSON as well as in form data
@@ -36,7 +36,7 @@ const createCart = async (req, res) => {
         if(!isValid(data.productId)) error.push("productId is required")
         if(isValid(data.productId) && !mongoose.isValidObjectId(data.productId)) error.push("productId is Invalid")
         if(!isValid(data.quantity)) data.quantity = 1
-        if(data.quantity < 1 || !Number.isInteger(data.quantity)) error.push("Quantity of item(s) should be a an integer & > 0.")
+        if(data.quantity < 1 || !Number.isInteger(Number(data.quantity)) || isNaN(data.quantity)) error.push("Quantity of item(s) should be a an integer & > 0.")
 
         if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
 
@@ -49,7 +49,7 @@ const createCart = async (req, res) => {
                 return res.status(403).send({status: false, message: "This is not your cart. Please try updating your cart."})
 
             let item = findCart.items.find(x => x.productId == data.productId)
-            if(item) item.quantity +=data.quantity
+            if(item) item.quantity += Number(data.quantity)
             else findCart.items.push({productId: data.productId, quantity: data.quantity})
 
             data.items = findCart.items
