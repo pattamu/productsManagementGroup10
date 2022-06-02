@@ -116,11 +116,14 @@ const getUser = async (req, res) => {
         let userId = req.params.userId
         if(!mongoose.isValidObjectId(userId))
             return res.status(400).send({status: false, message: `'${userId}' is an Invalid userId.`})
+            
+        let userDetails = await userModel.findById(userId)
 
+        if(!userDetails) return res.status(404).send({status: false, message: "User Not Found."}) 
+        
         if(userId != req.headers['valid-user'])
             return res.status(403).send({status: false, message: 'User not Authorised.'})
         
-        let userDetails = await userModel.findById(userId)
         res.status(200).send({status: true, message: 'success', data: userDetails})
     }catch(err){
         res.status(500).send({status: false, message: err.message})
