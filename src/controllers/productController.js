@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const uploadFile = require('./awsConnect')
 const productModel = require('../models/productModel')
-const {isFileImage, isValid} = require('../validation/validator')
+const {printError, isFileImage, isValid} = require('../validation/validator')
 
 const createProduct = async (req, res) => {
     try{
@@ -27,9 +27,11 @@ const createProduct = async (req, res) => {
         if(isValid(data.price) && (isNaN(data.price) || parseInt(data.price) < 0)) error.push('Price should be a +ve Integer')
 
         //check if currencyId is 'INR' Only
-        if(isValid(data.currencyId) && data.currencyId != 'INR') error.push("CurrencyId can only be 'INR'")
+        // if(isValid(data.currencyId) && data.currencyId != 'INR') error.push("CurrencyId can only be 'INR'")
+        if(isValid(data.currencyId) && !['INR','USD'].includes(data.currencyId)) error.push("CurrencyId can only be 'INR'/'USD")
         //check if currencyFormat is '₹' Only
-        if(isValid(data.currencyFormat) && data.currencyFormat != '₹') error.push("currencyFormat can only be '₹'")
+        // if(isValid(data.currencyFormat) && data.currencyFormat != '₹') error.push("currencyFormat can only be '₹'")
+        if(isValid(data.currencyFormat) && !['₹','$'].includes(data.currencyFormat)) error.push("currencyFormat can only be '₹'/'$")
 
         //check if isFreeShipping is Boolean
         if(isValid(data.isFreeShipping) && !['true','false'].includes(data.isFreeShipping))
@@ -58,10 +60,7 @@ const createProduct = async (req, res) => {
         if(isValid(data.installments) && !Number.isInteger(Number(data.installments)))
             error.push('Installment can only be a Integer.')    
 
-        if(error.length == 1)
-            return res.status(400).send({status: false, message: error.toString()})
-        else if(error.length > 1)
-            return res.status(400).send({status: false, message: error})
+        if(printError(error)) return res.status(400).send({status: false, message: printError(error)})
 
         data.availableSizes = [...new Set(data.availableSizes)]
         data.productImage = await uploadFile(req.files[0])//getting aws link for the uploaded file after stroing it in aws s3
