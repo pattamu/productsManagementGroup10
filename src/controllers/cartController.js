@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
+
 const cartModel = require('../models/cartModel')
 const productModel = require('../models/productModel')
 const {userModel} = require("../models/userModel")
 const {printError, isValid} = require('../validation/validator')
 
 
-//createcart can take input in raw JSON as well as in form data
+//create Cart API Handler Function
 const createCart = async (req, res) => {
     try{
         let data = req.body, error = []
@@ -80,6 +81,7 @@ const createCart = async (req, res) => {
 }
 
 
+//Update Cart API Handler Function 
 const updateCart = async (req, res) => {
     try{
         let data = req.body, error = []
@@ -146,6 +148,7 @@ const updateCart = async (req, res) => {
 }
 
 
+//Get Cart API Handler Function
 const getCart = async (req, res) => {
     try{
         let userId = req.params.userId
@@ -172,6 +175,7 @@ const getCart = async (req, res) => {
 }
 
 
+//Delete Cart API Handler Function
 const deleteCart = async (req, res) => {
     try{
         let userId = req.params.userId

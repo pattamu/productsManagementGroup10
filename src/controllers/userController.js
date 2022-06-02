@@ -7,7 +7,7 @@ const {userModel, passwordModel} = require("../models/userModel")
 const {printError, formatName, isFileImage, validRegEx, checkPinCode, isValid, isJSON} = require('../validation/validator')
 
 
-//Create User API Handler
+//Create User API Handler Function
 const createUser = async (req, res) => {
     try{
         let tempPass = req.body.password
@@ -110,7 +110,8 @@ const createUser = async (req, res) => {
     }
 }
 
-//Get User Data
+
+//Get User Data API Handler Function 
 const getUser = async (req, res) => {
     try{
         let userId = req.params.userId
@@ -131,7 +132,7 @@ const getUser = async (req, res) => {
 }
 
 
-// Update user Details
+// Update user Data API Handler Function
 const updateUser = async (req, res) => {
     try{
         let userId = req.params.userId

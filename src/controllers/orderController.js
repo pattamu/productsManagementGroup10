@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+
 const productModel = require('../models/productModel')
 const cartModel = require('../models/cartModel')
 const orderModel = require('../models/orderModel')
@@ -6,6 +7,7 @@ const {userModel} = require("../models/userModel")
 const {printError, isValid} = require('../validation/validator')
 
 
+//Create Order API Handler Function
 const createOrder = async (req, res) => {
     try{
         let data = req.body, error = []
@@ -56,6 +58,7 @@ const createOrder = async (req, res) => {
 }
 
 
+//Update Order API Handler Function
 const updateOrder = async (req, res) => {
     try{
         let data = req.body, error = []

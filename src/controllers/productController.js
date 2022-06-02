@@ -1,8 +1,11 @@
 const mongoose = require('mongoose')
+
 const uploadFile = require('./awsConnect')
 const productModel = require('../models/productModel')
 const {printError, isFileImage, isValid} = require('../validation/validator')
 
+
+//Creat Product API Handler Function
 const createProduct = async (req, res) => {
     try{
         let data = JSON.parse(JSON.stringify(req.body))
@@ -71,6 +74,7 @@ const createProduct = async (req, res) => {
 }
 
 
+//Get Products data API Handler Function
 const getProducts = async(req, res) => {
     try{
         let filters = req.query, products, options, options2, newFilter = {} //'options' is for size & 'options2' is for name
@@ -102,6 +106,7 @@ const getProducts = async(req, res) => {
 }
 
 
+//Get Product By Id API Handler Function
 const getProduct = async (req, res) => {
     try{
         let pId = req.params.productId
@@ -122,6 +127,7 @@ const getProduct = async (req, res) => {
 }
 
 
+//Update Product By Id API Handler Function
 const updateProduct = async (req, res) => {
     try{
         let pId = req.params.productId
@@ -176,6 +182,7 @@ const updateProduct = async (req, res) => {
 }
 
 
+//Delete Product By Id API Handler Function
 const deleteProduct = async (req, res) => {
     try{
         let pId = req.params.productId
@@ -194,5 +201,6 @@ const deleteProduct = async (req, res) => {
         res.status(500).send({status: false, message: err.message})
     }
 }
+
 
 module.exports = {createProduct, getProducts, getProduct, updateProduct, deleteProduct}

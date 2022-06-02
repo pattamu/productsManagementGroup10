@@ -1,5 +1,6 @@
 const axios = require('axios')
 
+//Axios call to check Pin-Code existance in India
 const pincodeCheck = async (pin) => {
     try{
         let fetch = {
