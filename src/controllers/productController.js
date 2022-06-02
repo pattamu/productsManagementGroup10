@@ -186,9 +186,9 @@ const deleteProduct = async (req, res) => {
         let deletedProduct = await productModel.findOneAndUpdate({_id: pId, isDeleted: false},{isDeleted: true, deletedAt: Date.now()},{new: true})
 
         if(!deletedProduct)
-            return res.status(404).send({ status: false, message: "Product not found." })
+            return res.status(404).send({ status: false, message: "Product not found/Already deleted." })
 
-        res.status(200).send({status: true, message: "Product deleted successfully.", data: deletedProduct})
+        res.status(200).send({status: true, message: "Product deleted successfully."})
 
     }catch(err){
         res.status(500).send({status: false, message: err.message})
