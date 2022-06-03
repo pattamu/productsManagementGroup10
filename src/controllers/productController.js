@@ -143,7 +143,7 @@ const updateProduct = async (req, res) => {
         if(!findProduct)
             return res.status(404).send({status: false, message: `No product found for: '${pId}'`})
         
-        if(!Object.keys(data).length)
+        if(!req.files.length && !Object.keys(data).length)
             return res.status(400).send({status: false, message: "Can't update product without data."})
 
         if(isValid(data.availableSizes)){

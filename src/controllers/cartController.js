@@ -200,7 +200,8 @@ const deleteCart = async (req, res) => {
         if(!deleteCart)
             return res.status(404).send({status: false, message: "User doesn't have a cart to delete."})
 
-        res.status(204).send({status: true, message: "Cart deleted successfully."})
+        res.status(204).end()//We can't send data with status code 204, so for sending data use line-204 instead.
+        // res.status(200).send({status: true, message: "Cart deleted successfully."})
 
     }catch(err){
         res.status(500).send({status: false, message: err.message})
